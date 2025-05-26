@@ -1,12 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import {
   XAxis,
   YAxis,
@@ -23,64 +21,106 @@ import {
 } from "recharts"
 import {
   TrendingUp,
-  TrendingDown,
   Package,
   Users,
   ShoppingCart,
   DollarSign,
   AlertTriangle,
   Star,
-  Search,
-  Filter,
   Building2,
   Truck,
-  Calendar,
-  Target,
+  Upload,
+  FileText,
 } from "lucide-react"
-
-// Sample data for the DSS
-const salesData = [
-  { month: "Jan", sales: 45000, forecast: 42000 },
-  { month: "Feb", sales: 52000, forecast: 48000 },
-  { month: "Mar", sales: 48000, forecast: 50000 },
-  { month: "Apr", sales: 61000, forecast: 55000 },
-  { month: "May", sales: 55000, forecast: 58000 },
-  { month: "Jun", sales: 67000, forecast: 62000 },
-]
-
-const topProducts = [
-  { name: "Rice (50kg)", sales: 1250, revenue: 875000, trend: "up", growth: 12 },
-  { name: "Cooking Oil (5L)", sales: 890, revenue: 623000, trend: "up", growth: 8 },
-  { name: "Sugar (1kg)", sales: 1100, revenue: 550000, trend: "down", growth: -3 },
-  { name: "Bread", sales: 2100, revenue: 420000, trend: "up", growth: 15 },
-  { name: "Milk (1L)", sales: 750, revenue: 375000, trend: "up", growth: 6 },
-]
-
-const customerSegments = [
-  { name: "Regular Customers", value: 45, color: "#8884d8" },
-  { name: "Occasional Buyers", value: 30, color: "#82ca9d" },
-  { name: "New Customers", value: 15, color: "#ffc658" },
-  { name: "VIP Customers", value: 10, color: "#ff7300" },
-]
-
-const suppliers = [
-  { name: "Golden Harvest Ltd", products: 45, reliability: 95, cost: "Low", partnership: "Strategic" },
-  { name: "Fresh Foods Nigeria", products: 32, reliability: 88, cost: "Medium", partnership: "Regular" },
-  { name: "Ogun State Farms", products: 28, reliability: 92, cost: "Low", partnership: "Strategic" },
-  { name: "Metro Distributors", products: 38, reliability: 85, cost: "High", partnership: "Regular" },
-  { name: "Local Cooperative", products: 22, reliability: 90, cost: "Low", partnership: "Strategic" },
-]
-
-const inventoryData = [
-  { category: "Grains & Cereals", stock: 85, reorder: 20, status: "Good" },
-  { category: "Dairy Products", stock: 45, reorder: 30, status: "Low" },
-  { category: "Beverages", stock: 92, reorder: 25, status: "Good" },
-  { category: "Household Items", stock: 15, reorder: 20, status: "Critical" },
-  { category: "Snacks", stock: 78, reorder: 15, status: "Good" },
-]
+import { DataUpload } from "@/components/data-upload"
+import { ReportGenerator } from "@/components/report-generator"
+import { getSales, getProducts, getCustomers, getSuppliers } from "@/lib/database"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SoaringMartDSS() {
+  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("overview")
+  const [dashboardData, setDashboardData] = useState({
+    totalRevenue: 0,
+    totalSales: 0,
+    activeCustomers: 0,
+    inventoryValue: 0,
+    products: [],
+    customers: [],
+    suppliers: [],
+    sales: [],
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  const loadDashboardData = async () => {
+    try {
+      const [products, customers, suppliers, sales] = await Promise.all([
+        getProducts(),
+        getCustomers(),
+        getSuppliers(),
+        getSales(),
+      ])
+
+      const totalRevenue = sales.reduce((sum: number, sale: any) => sum + Number.parseFloat(sale.total_amount), 0)
+      const totalSales = sales.length
+      const activeCustomers = customers.length
+      const inventoryValue = products.reduce(
+        (sum: number, product: any) => sum + Number.parseFloat(product.price) * product.stock_quantity,
+        0,
+      )
+
+      setDashboardData({
+        totalRevenue,
+        totalSales,
+        activeCustomers,
+        inventoryValue,
+        products,
+        customers,
+        suppliers,
+        sales,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Sample data for charts (you can replace with real data processing)
+  const salesData = [
+    { month: "Jan", sales: 45000, forecast: 42000 },
+    { month: "Feb", sales: 52000, forecast: 48000 },
+    { month: "Mar", sales: 48000, forecast: 50000 },
+    { month: "Apr", sales: 61000, forecast: 55000 },
+    { month: "May", sales: 55000, forecast: 58000 },
+    { month: "Jun", sales: 67000, forecast: 62000 },
+  ]
+
+  const customerSegments = [
+    { name: "Regular Customers", value: 45, color: "#8884d8" },
+    { name: "Occasional Buyers", value: 30, color: "#82ca9d" },
+    { name: "New Customers", value: 15, color: "#ffc658" },
+    { name: "VIP Customers", value: 10, color: "#ff7300" },
+  ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -98,13 +138,13 @@ export default function SoaringMartDSS() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                Today
-              </Button>
-              <Button size="sm">
-                <Target className="h-4 w-4 mr-2" />
+              <Button variant="outline" size="sm" onClick={() => setActiveTab("reports")}>
+                <FileText className="h-4 w-4 mr-2" />
                 Generate Report
+              </Button>
+              <Button size="sm" onClick={() => setActiveTab("upload")}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Data
               </Button>
             </div>
           </div>
@@ -113,13 +153,15 @@ export default function SoaringMartDSS() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
             <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
+            <TabsTrigger value="upload">Upload Data</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -132,11 +174,11 @@ export default function SoaringMartDSS() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₦2,847,500</div>
+                  <div className="text-2xl font-bold">₦{dashboardData.totalRevenue.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">
                     <span className="text-green-600 flex items-center">
                       <TrendingUp className="h-3 w-3 mr-1" />
-                      +12.5% from last month
+                      Live data from database
                     </span>
                   </p>
                 </CardContent>
@@ -148,11 +190,11 @@ export default function SoaringMartDSS() {
                   <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">6,890</div>
+                  <div className="text-2xl font-bold">{dashboardData.totalSales.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">
                     <span className="text-green-600 flex items-center">
                       <TrendingUp className="h-3 w-3 mr-1" />
-                      +8.2% from last month
+                      Transactions recorded
                     </span>
                   </p>
                 </CardContent>
@@ -164,11 +206,11 @@ export default function SoaringMartDSS() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">1,247</div>
+                  <div className="text-2xl font-bold">{dashboardData.activeCustomers.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">
                     <span className="text-green-600 flex items-center">
                       <TrendingUp className="h-3 w-3 mr-1" />
-                      +15.3% from last month
+                      Registered customers
                     </span>
                   </p>
                 </CardContent>
@@ -180,11 +222,11 @@ export default function SoaringMartDSS() {
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₦892,300</div>
+                  <div className="text-2xl font-bold">₦{dashboardData.inventoryValue.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">
-                    <span className="text-red-600 flex items-center">
-                      <TrendingDown className="h-3 w-3 mr-1" />
-                      -2.1% from last month
+                    <span className="text-blue-600 flex items-center">
+                      <Package className="h-3 w-3 mr-1" />
+                      Current stock value
                     </span>
                   </p>
                 </CardContent>
@@ -195,7 +237,7 @@ export default function SoaringMartDSS() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Sales vs Forecast</CardTitle>
+                  <CardTitle>Sales Trend</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -213,7 +255,7 @@ export default function SoaringMartDSS() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Customer Segments</CardTitle>
+                  <CardTitle>Customer Distribution</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -243,25 +285,16 @@ export default function SoaringMartDSS() {
           <TabsContent value="products" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Product Analysis</h2>
-              <div className="flex space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search products..." className="pl-8 w-64" />
-                </div>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-              </div>
+              <Button onClick={loadDashboardData}>Refresh Data</Button>
             </div>
 
             <Card>
               <CardHeader>
-                <CardTitle>Top Selling Products</CardTitle>
+                <CardTitle>Products in Database ({dashboardData.products.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {topProducts.map((product, index) => (
+                  {dashboardData.products.slice(0, 10).map((product: any, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -269,143 +302,113 @@ export default function SoaringMartDSS() {
                         </div>
                         <div>
                           <h3 className="font-semibold">{product.name}</h3>
-                          <p className="text-sm text-gray-500">{product.sales} units sold</p>
+                          <p className="text-sm text-gray-500">{product.category}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">₦{product.revenue.toLocaleString()}</p>
-                        <div className="flex items-center space-x-2">
-                          {product.trend === "up" ? (
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <TrendingDown className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className={`text-sm ${product.trend === "up" ? "text-green-600" : "text-red-600"}`}>
-                            {product.growth > 0 ? "+" : ""}
-                            {product.growth}%
-                          </span>
-                        </div>
+                        <p className="font-semibold">₦{Number.parseFloat(product.price).toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">Stock: {product.stock_quantity}</p>
                       </div>
                     </div>
                   ))}
+                  {dashboardData.products.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">
+                      No products found. Use the Upload Data tab to add products.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Customers Tab */}
-          <TabsContent value="customers" className="space-y-6">
-            <h2 className="text-2xl font-bold">Customer Analytics</h2>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Purchase Patterns</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Morning (6AM - 12PM)</span>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={65} className="w-24" />
-                        <span className="text-sm">65%</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Afternoon (12PM - 6PM)</span>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={85} className="w-24" />
-                        <span className="text-sm">85%</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Evening (6PM - 10PM)</span>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={45} className="w-24" />
-                        <span className="text-sm">45%</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Loyalty Metrics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Repeat Purchase Rate</span>
-                      <Badge variant="secondary">78%</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Average Order Value</span>
-                      <Badge variant="secondary">₦2,450</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Customer Lifetime Value</span>
-                      <Badge variant="secondary">₦45,600</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Churn Rate</span>
-                      <Badge variant="destructive">12%</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Upload Data Tab */}
+          <TabsContent value="upload">
+            <DataUpload />
           </TabsContent>
 
-          {/* Inventory Tab */}
-          <TabsContent value="inventory" className="space-y-6">
-            <h2 className="text-2xl font-bold">Inventory Management</h2>
+          {/* Reports Tab */}
+          <TabsContent value="reports">
+            <ReportGenerator />
+          </TabsContent>
 
+          {/* Other existing tabs remain the same... */}
+          <TabsContent value="customers" className="space-y-6">
+            <h2 className="text-2xl font-bold">Customer Management</h2>
             <Card>
               <CardHeader>
-                <CardTitle>Stock Levels by Category</CardTitle>
+                <CardTitle>Registered Customers ({dashboardData.customers.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {inventoryData.map((item, index) => (
+                  {dashboardData.customers.slice(0, 10).map((customer: any, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h3 className="font-semibold">{customer.name}</h3>
+                        <p className="text-sm text-gray-500">{customer.customer_type}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">₦{Number.parseFloat(customer.total_spent).toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">Total Spent</p>
+                      </div>
+                    </div>
+                  ))}
+                  {dashboardData.customers.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">
+                      No customers found. Use the Upload Data tab to add customers.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="inventory" className="space-y-6">
+            <h2 className="text-2xl font-bold">Inventory Management</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Stock Levels</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {dashboardData.products.map((product: any, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <Package className="h-5 w-5 text-gray-600" />
                         <div>
-                          <h3 className="font-semibold">{item.category}</h3>
-                          <p className="text-sm text-gray-500">Reorder at {item.reorder}%</p>
+                          <h3 className="font-semibold">{product.name}</h3>
+                          <p className="text-sm text-gray-500">Reorder at {product.reorder_level}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <Progress value={item.stock} className="w-32" />
-                        <span className="text-sm font-medium">{item.stock}%</span>
-                        <Badge
-                          variant={
-                            item.status === "Critical" ? "destructive" : item.status === "Low" ? "secondary" : "default"
-                          }
-                        >
-                          {item.status}
+                        <span className="text-sm font-medium">{product.stock_quantity} units</span>
+                        <Badge variant={product.stock_quantity <= product.reorder_level ? "destructive" : "default"}>
+                          {product.stock_quantity <= product.reorder_level ? "Low Stock" : "Good"}
                         </Badge>
-                        {item.status === "Critical" && <AlertTriangle className="h-4 w-4 text-red-600" />}
+                        {product.stock_quantity <= product.reorder_level && (
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                        )}
                       </div>
                     </div>
                   ))}
+                  {dashboardData.products.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">
+                      No products found. Use the Upload Data tab to add products.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Suppliers Tab */}
           <TabsContent value="suppliers" className="space-y-6">
-            <h2 className="text-2xl font-bold">Supplier Analysis</h2>
-
+            <h2 className="text-2xl font-bold">Supplier Management</h2>
             <Card>
               <CardHeader>
-                <CardTitle>Supplier Performance</CardTitle>
+                <CardTitle>Registered Suppliers ({dashboardData.suppliers.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {suppliers.map((supplier, index) => (
+                  {dashboardData.suppliers.map((supplier: any, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -413,7 +416,7 @@ export default function SoaringMartDSS() {
                         </div>
                         <div>
                           <h3 className="font-semibold">{supplier.name}</h3>
-                          <p className="text-sm text-gray-500">{supplier.products} products supplied</p>
+                          <p className="text-sm text-gray-500">{supplier.contact_person}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-6">
@@ -421,45 +424,31 @@ export default function SoaringMartDSS() {
                           <p className="text-sm text-gray-500">Reliability</p>
                           <div className="flex items-center space-x-1">
                             <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="font-semibold">{supplier.reliability}%</span>
+                            <span className="font-semibold">{supplier.reliability_score}%</span>
                           </div>
                         </div>
-                        <div className="text-center">
-                          <p className="text-sm text-gray-500">Cost</p>
-                          <Badge
-                            variant={
-                              supplier.cost === "Low"
-                                ? "default"
-                                : supplier.cost === "Medium"
-                                  ? "secondary"
-                                  : "destructive"
-                            }
-                          >
-                            {supplier.cost}
-                          </Badge>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm text-gray-500">Partnership</p>
-                          <Badge variant={supplier.partnership === "Strategic" ? "default" : "outline"}>
-                            {supplier.partnership}
-                          </Badge>
-                        </div>
+                        <Badge variant={supplier.partnership_type === "Strategic" ? "default" : "outline"}>
+                          {supplier.partnership_type}
+                        </Badge>
                       </div>
                     </div>
                   ))}
+                  {dashboardData.suppliers.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">
+                      No suppliers found. Use the Upload Data tab to add suppliers.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Forecasting Tab */}
           <TabsContent value="forecasting" className="space-y-6">
             <h2 className="text-2xl font-bold">Sales Forecasting</h2>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Revenue Forecast (Next 6 Months)</CardTitle>
+                  <CardTitle>Revenue Forecast</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -481,27 +470,22 @@ export default function SoaringMartDSS() {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-semibold text-blue-900">Inventory Optimization</h4>
+                      <h4 className="font-semibold text-blue-900">Data Integration</h4>
                       <p className="text-sm text-blue-700">
-                        Increase rice stock by 20% for next month based on seasonal trends.
+                        Your database now has {dashboardData.products.length} products and {dashboardData.sales.length}{" "}
+                        sales records.
                       </p>
                     </div>
                     <div className="p-4 bg-green-50 rounded-lg">
-                      <h4 className="font-semibold text-green-900">Customer Retention</h4>
+                      <h4 className="font-semibold text-green-900">Customer Growth</h4>
                       <p className="text-sm text-green-700">
-                        Launch loyalty program for customers spending above ₦5,000 monthly.
+                        {dashboardData.customers.length} customers registered. Focus on retention strategies.
                       </p>
                     </div>
                     <div className="p-4 bg-yellow-50 rounded-lg">
-                      <h4 className="font-semibold text-yellow-900">Supplier Strategy</h4>
+                      <h4 className="font-semibold text-yellow-900">Inventory Alerts</h4>
                       <p className="text-sm text-yellow-700">
-                        Consider strategic partnership with Golden Harvest Ltd for better pricing.
-                      </p>
-                    </div>
-                    <div className="p-4 bg-purple-50 rounded-lg">
-                      <h4 className="font-semibold text-purple-900">Sales Optimization</h4>
-                      <p className="text-sm text-purple-700">
-                        Focus marketing efforts on afternoon hours when sales peak at 85%.
+                        Monitor stock levels and set up automatic reorder alerts.
                       </p>
                     </div>
                   </div>
