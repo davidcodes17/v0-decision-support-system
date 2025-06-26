@@ -28,3 +28,20 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+5. # Database
+DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
+
+# Authentication
+NEXTAUTH_SECRET="your-secret-key-here"
+NEXTAUTH_URL="http://localhost:3000"
+
+# API Keys
+OPENAI_API_KEY="your-openai-api-key"
+STRIPE_SECRET_KEY="your-stripe-secret-key"
+STRIPE_PUBLISHABLE_KEY="your-stripe-publishable-key"
+
+# Supabase (if using)
+NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
