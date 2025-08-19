@@ -38,7 +38,6 @@ export interface Supplier {
   email?: string
   phone?: string
   address?: string
-  reliability_score: number
   cost_rating: string
   partnership_type: string
   created_at: string
@@ -61,7 +60,7 @@ export interface Sale {
 export interface InventoryMovement {
   id: number
   product_id: number
-  movement_type: "IN" | "OUT"
+  movement_type: string // Changed from "IN" | "OUT" to string to fix parse error
   quantity: number
   reference_type: string
   reference_id?: number

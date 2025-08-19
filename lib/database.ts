@@ -62,7 +62,7 @@ export async function addCustomer(customer: Omit<any, "id" | "created_at" | "upd
 
 // Suppliers
 export async function getSuppliers() {
-  const { data, error } = await supabase.from("suppliers").select("*").order("reliability_score", { ascending: false })
+  const { data, error } = await supabase.from("suppliers").select("*").order("created_at", { ascending: false })
 
   if (error) throw error
   return data
@@ -110,7 +110,7 @@ export async function getTopProducts(limit = 10) {
 }
 
 export async function getInventoryStatus() {
-  const { data, error } = await supabase.from("products").select("*").order("stock_quantity", { ascending: true })
+  const { data, error } = await supabase.from("products").select().order("stock_quantity", { ascending: true })
 
   if (error) throw error
   return data

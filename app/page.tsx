@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   XAxis,
   YAxis,
@@ -16,28 +15,31 @@ import {
   PieChart,
   Pie,
   Cell,
-  Area,
-  AreaChart,
 } from "recharts"
-import {
-  TrendingUp,
-  Package,
-  Users,
-  ShoppingCart,
-  DollarSign,
-  AlertTriangle,
-  Star,
-  Building2,
-  Truck,
-  Upload,
-  FileText,
-} from "lucide-react"
+import { TrendingUp, Package, Users, ShoppingCart, DollarSign, Building2, Upload, FileText } from "lucide-react"
 import { DataUpload } from "@/components/data-upload"
 import { ReportGenerator } from "@/components/report-generator"
+import { InventoryTable } from "@/components/inventory-table"
+import { SupplierManagement } from "@/components/supplier-management"
 import { getSales, getProducts, getCustomers, getSuppliers } from "@/lib/database"
 import { useToast } from "@/hooks/use-toast"
+import { AuthProvider } from "@/components/auth/auth-provider"
+import { ProtectedRoute } from "@/components/auth/protected-route"
+import { UserMenu } from "@/components/user-menu"
+import { ProfileSettings } from "@/components/profile-settings"
+import { AIForecasting } from "@/components/ai-forecasting"
 
 export default function SoaringMartDSS() {
+  return (
+    <AuthProvider>
+      <ProtectedRoute>
+        <SoaringMartDSSContent />
+      </ProtectedRoute>
+    </AuthProvider>
+  )
+}
+
+function SoaringMartDSSContent() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("overview")
   const [dashboardData, setDashboardData] = useState({
@@ -146,6 +148,10 @@ export default function SoaringMartDSS() {
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Data
               </Button>
+              <UserMenu
+                onProfileClick={() => setActiveTab("profile")}
+                onSettingsClick={() => setActiveTab("profile")}
+              />
             </div>
           </div>
         </div>
@@ -153,7 +159,7 @@ export default function SoaringMartDSS() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
@@ -162,6 +168,7 @@ export default function SoaringMartDSS() {
             <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
             <TabsTrigger value="upload">Upload Data</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -331,7 +338,7 @@ export default function SoaringMartDSS() {
             <ReportGenerator />
           </TabsContent>
 
-          {/* Other existing tabs remain the same... */}
+          {/* Customers Tab */}
           <TabsContent value="customers" className="space-y-6">
             <h2 className="text-2xl font-bold">Customer Management</h2>
             <Card>
@@ -362,136 +369,22 @@ export default function SoaringMartDSS() {
             </Card>
           </TabsContent>
 
+          {/* Inventory Tab - Updated with new table */}
           <TabsContent value="inventory" className="space-y-6">
-            <h2 className="text-2xl font-bold">Inventory Management</h2>
-            <Card>
-              <CardHeader>
-                <CardTitle>Stock Levels</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {dashboardData.products.map((product: any, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <Package className="h-5 w-5 text-gray-600" />
-                        <div>
-                          <h3 className="font-semibold">{product.name}</h3>
-                          <p className="text-sm text-gray-500">Reorder at {product.reorder_level}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <span className="text-sm font-medium">{product.stock_quantity} units</span>
-                        <Badge variant={product.stock_quantity <= product.reorder_level ? "destructive" : "default"}>
-                          {product.stock_quantity <= product.reorder_level ? "Low Stock" : "Good"}
-                        </Badge>
-                        {product.stock_quantity <= product.reorder_level && (
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {dashboardData.products.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">
-                      No products found. Use the Upload Data tab to add products.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <InventoryTable />
           </TabsContent>
 
+          {/* Suppliers Tab - Updated with new management */}
           <TabsContent value="suppliers" className="space-y-6">
-            <h2 className="text-2xl font-bold">Supplier Management</h2>
-            <Card>
-              <CardHeader>
-                <CardTitle>Registered Suppliers ({dashboardData.suppliers.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {dashboardData.suppliers.map((supplier: any, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                          <Truck className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{supplier.name}</h3>
-                          <p className="text-sm text-gray-500">{supplier.contact_person}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-6">
-                        <div className="text-center">
-                          <p className="text-sm text-gray-500">Reliability</p>
-                          <div className="flex items-center space-x-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="font-semibold">{supplier.reliability_score}%</span>
-                          </div>
-                        </div>
-                        <Badge variant={supplier.partnership_type === "Strategic" ? "default" : "outline"}>
-                          {supplier.partnership_type}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                  {dashboardData.suppliers.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">
-                      No suppliers found. Use the Upload Data tab to add suppliers.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <SupplierManagement />
           </TabsContent>
 
           <TabsContent value="forecasting" className="space-y-6">
-            <h2 className="text-2xl font-bold">Sales Forecasting</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue Forecast</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={salesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [`₦${value.toLocaleString()}`, ""]} />
-                      <Area type="monotone" dataKey="forecast" stroke="#8884d8" fill="#8884d8" fillOpacity={0.3} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+            <AIForecasting />
+          </TabsContent>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>AI Recommendations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-semibold text-blue-900">Data Integration</h4>
-                      <p className="text-sm text-blue-700">
-                        Your database now has {dashboardData.products.length} products and {dashboardData.sales.length}{" "}
-                        sales records.
-                      </p>
-                    </div>
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <h4 className="font-semibold text-green-900">Customer Growth</h4>
-                      <p className="text-sm text-green-700">
-                        {dashboardData.customers.length} customers registered. Focus on retention strategies.
-                      </p>
-                    </div>
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                      <h4 className="font-semibold text-yellow-900">Inventory Alerts</h4>
-                      <p className="text-sm text-yellow-700">
-                        Monitor stock levels and set up automatic reorder alerts.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="profile">
+            <ProfileSettings />
           </TabsContent>
         </Tabs>
       </div>

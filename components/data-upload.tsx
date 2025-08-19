@@ -94,7 +94,6 @@ export function DataUpload() {
       email: (formData.get("email") as string) || null,
       phone: (formData.get("phone") as string) || null,
       address: (formData.get("address") as string) || null,
-      reliability_score: Number.parseInt(formData.get("reliability_score") as string),
       cost_rating: formData.get("cost_rating") as string,
       partnership_type: formData.get("partnership_type") as string,
     }
@@ -299,10 +298,6 @@ export function DataUpload() {
                   <div>
                     <Label htmlFor="supplier_phone">Phone</Label>
                     <Input id="supplier_phone" name="phone" />
-                  </div>
-                  <div>
-                    <Label htmlFor="reliability_score">Reliability Score (0-100)</Label>
-                    <Input id="reliability_score" name="reliability_score" type="number" min="0" max="100" required />
                   </div>
                   <div>
                     <Label htmlFor="cost_rating">Cost Rating</Label>
