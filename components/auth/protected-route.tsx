@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useAuth } from "./auth-provider"
 import { SimpleLogin } from "./simple-login"
+import { Loader2 } from "lucide-react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -16,8 +17,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait while we verify your session</p>
         </div>
       </div>
     )

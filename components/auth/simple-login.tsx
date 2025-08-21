@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Eye, EyeOff, Building2, LogIn } from "lucide-react"
+import { Eye, EyeOff, Building2, LogIn, Loader2 } from "lucide-react"
 import { signIn } from "@/lib/auth"
 
 interface SimpleLoginProps {
@@ -53,8 +53,26 @@ export function SimpleLogin({ onSuccess }: SimpleLoginProps) {
     }))
   }
 
-  const handleDemoLogin = (email: string, password: string) => {
+  const handleDemoLogin = async (email: string, password: string) => {
     setFormData({ email, password })
+    setLoading(true)
+
+    try {
+      await signIn(email, password)
+      toast({
+        title: "Success",
+        description: "Demo login successful!",
+      })
+      onSuccess()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Demo login failed.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -83,6 +101,7 @@ export function SimpleLogin({ onSuccess }: SimpleLoginProps) {
                 onChange={handleChange}
                 placeholder="Enter admin email"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -97,6 +116,7 @@ export function SimpleLogin({ onSuccess }: SimpleLoginProps) {
                   onChange={handleChange}
                   placeholder="Enter password"
                   required
+                  disabled={loading}
                 />
                 <Button
                   type="button"
@@ -104,6 +124,7 @@ export function SimpleLogin({ onSuccess }: SimpleLoginProps) {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -111,20 +132,31 @@ export function SimpleLogin({ onSuccess }: SimpleLoginProps) {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
-              <LogIn className="ml-2 h-4 w-4" />
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign In
+                  <LogIn className="ml-2 h-4 w-4" />
+                </>
+              )}
             </Button>
           </form>
 
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 mb-3">Demo Admin Account:</p>
+            <p className="text-xs text-gray-600 mb-3">Quick Demo Access:</p>
             <div className="space-y-2">
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full text-xs bg-transparent"
                 onClick={() => handleDemoLogin("admin@soaringmart.ng", "admin123")}
+                disabled={loading}
               >
+                {loading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
                 Use Admin Demo Account
               </Button>
               <div className="text-xs text-gray-500 text-center">
